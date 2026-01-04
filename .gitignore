@@ -1,0 +1,32 @@
+# Python
+backend/__pycache__/
+backend/*.py[cod]
+backend/*.pyo
+
+# Virtual environment
+backend/.venv/
+backend/.env
+
+# Flask
+backend/instance/
+backend/*.log
+
+# Database
+backend/*.sqlite3
+backend/pharmacy.db
+
+# Migrations cache
+backend/migrations/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node / Electron (later)
+node_modules/
+dist/
+build/
