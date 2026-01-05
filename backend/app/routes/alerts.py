@@ -7,7 +7,7 @@ from app.extensions import db
 
 alerts_bp = Blueprint("alerts", __name__, url_prefix="/alerts")
 
-EXPIRATION_ALERT_DAYS = 400
+EXPIRATION_ALERT_DAYS = 90
 
 
 @alerts_bp.route("/expiration", methods=["GET"])
@@ -15,25 +15,33 @@ def expiration_alerts():
     today = date.today()
     limit = today + timedelta(days=EXPIRATION_ALERT_DAYS)
 
-    lots = StockLot.query.filter(
-        StockLot.quantite_restante > 0,
-        StockLot.date_expiration <= limit
-    ).all()
-
+    lots = (
+        db.session.query(
+            StockLot,
+            Medicament.nom_commercial
+        )
+        .join(Medicament, Medicament.id == StockLot.medicament_id)
+        .filter(
+            StockLot.quantite_restante > 0,
+            StockLot.date_expiration <= limit
+        )
+        .all()
+    )
 
     return jsonify([
         {
             "medicament_id": l.medicament_id,
+            "medicament": nom_commercial,
             "lot": l.lot,
             "quantite": l.quantite_restante,
             "date_expiration": l.date_expiration.isoformat(),
             "status": "expired" if l.date_expiration < today else "expiring_soon"
         }
-        for l in lots
+        for l, nom_commercial in lots
     ])
 
 
-STOCK_ALERT_THRESHOLD = 1000
+STOCK_ALERT_THRESHOLD = 50
 
 @alerts_bp.route("/low-stock", methods=["GET"])
 def low_stock_alerts():
@@ -43,15 +51,15 @@ def low_stock_alerts():
         db.session.query(
             Medicament.id,
             Medicament.nom_commercial,
-            func.coalesce(func.sum(StockLot.quantite_restante), 0).label("total_stock")
+            func.sum(StockLot.quantite_restante).label("total_stock")
         )
-        .outerjoin(
+        .join(
             StockLot,
             (StockLot.medicament_id == Medicament.id) &
             (StockLot.date_expiration > today)
         )
         .group_by(Medicament.id)
-        .having(func.coalesce(func.sum(StockLot.quantite_restante), 0) < STOCK_ALERT_THRESHOLD)
+        .having(func.sum(StockLot.quantite_restante) < STOCK_ALERT_THRESHOLD)
         .all()
     )
 
@@ -63,3 +71,4 @@ def low_stock_alerts():
         }
         for r in rows
     ])
+

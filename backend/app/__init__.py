@@ -8,7 +8,7 @@ from .routes.achat import achat_bp
 from .routes.stock import stock_bp
 from .routes.alerts import alerts_bp
 from .routes.vente import vente_bp
-
+from .routes.dashboard import dashboard_bp
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -25,5 +25,5 @@ def create_app():
     app.register_blueprint(stock_bp)
     app.register_blueprint(alerts_bp)
     app.register_blueprint(vente_bp)
-    
+    app.register_blueprint(dashboard_bp)
     return app
